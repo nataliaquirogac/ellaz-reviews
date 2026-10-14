@@ -5,25 +5,38 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ellaz Reviews</title>
 <style>
-  :root{--bg:#faf8f5;--card:#fff;--ink:#222;--mute:#888;--line:#eee;--red:#d62828;--ok:#2a9d5c;--warn:#c98a00}
+  :root{--bg:#faf8f5;--card:#fff;--ink:#222;--ink2:#555;--mute:#8a8a8a;--line:#ece9e4;--track:#f1eeea;
+    --red:#d62828;--redbg:#fdecec;--ok:#2a9d5c;--okbg:#e8f6ee;--warn:#b07900;--warnbar:#d9a21b;--warnbg:#fff5d6}
   *{box-sizing:border-box}
-  body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
-  header{padding:22px 16px 8px;text-align:center}
+  body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent}
+  header{padding:22px 16px 6px;text-align:center}
   h1{margin:0;font-size:22px;letter-spacing:.5px}
-  header p{margin:4px 0 0;color:var(--mute);font-size:13px}
   .legend{display:flex;gap:12px;justify-content:center;margin-top:8px;font-size:12px;font-weight:600}
   .legend .r{color:var(--red)}.legend .y{color:var(--warn)}.legend .g{color:var(--ok)}
-  .adminbar{max-width:560px;margin:6px auto 0;padding:0 16px;font-size:12px;color:var(--mute);text-align:center}
-  main{max-width:560px;margin:0 auto;padding:12px 16px 40px}
-  .loc{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
-  .loc img{display:block;width:100%;height:150px;object-fit:cover;cursor:pointer}
+  .adminbar{font-size:12px;color:var(--mute);text-align:center;margin-top:6px}
+  .tabs{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:6px;max-width:560px;margin:0 auto;padding:10px 16px}
+  .tabs button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:99px;padding:10px;font-weight:600;font-size:14px;color:var(--ink2);cursor:pointer}
+  .tabs button.on{background:#222;color:#fff;border-color:#222}
+  main{max-width:560px;margin:0 auto;padding:4px 16px 40px}
+  .search{position:relative;margin-bottom:12px}
+  .search input{width:100%;padding:13px 40px 13px 14px;border:1px solid var(--line);border-radius:12px;font-size:16px;background:var(--card)}
+  .search button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:18px;color:var(--mute);cursor:pointer;display:none}
+  .hint{font-size:13px;color:var(--ink2);margin:0 2px 12px;text-align:center}
+  /* tarjetas de ubicación */
+  .loc{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden}
+  .loc img{display:block;width:100%;height:120px;object-fit:cover}
+  .head{all:unset;cursor:pointer;display:block;width:100%;padding:14px 16px 12px;box-sizing:border-box}
+  .row1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .lname{font-weight:700;font-size:17px}
+  .count{font-size:13px;color:var(--ink2);white-space:nowrap}
+  .count b{color:var(--ok)}
+  .bar{display:flex;gap:2px;height:8px;margin-top:10px;background:var(--track);border-radius:4px;overflow:hidden}
+  .bar i{display:block;height:100%}
+  .bar .g{background:var(--ok)}.bar .y{background:var(--warnbar)}
+  .toggle{display:flex;justify-content:center;align-items:center;gap:6px;margin-top:12px;padding:9px;border-radius:10px;background:var(--track);font-size:14px;font-weight:600;color:var(--ink)}
+  .toggle .chev{transition:transform .2s}
+  .loc.open .toggle .chev{transform:rotate(180deg)}
   .maps{display:block;margin:0 16px 14px;padding:11px;text-align:center;border-radius:10px;background:#222;color:#fff;text-decoration:none;font-weight:600;font-size:14px}
-  .loc>button{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;padding:16px;box-sizing:border-box}
-  .loc .name{font-weight:600}
-  .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-  .badge{font-size:12px;padding:4px 10px;border-radius:99px;background:#fdecec;color:var(--red);font-weight:600;white-space:nowrap}
-  .badge.y{background:#fff5d6;color:var(--warn)}
-  .badge.done{background:#e8f6ee;color:var(--ok)}
   ul{list-style:none;margin:0;padding:0 16px 14px;display:none}
   .loc.open ul{display:block}
   li{padding:10px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer}
@@ -31,11 +44,43 @@
   li.revision{color:var(--warn);font-weight:600}
   li.ok{color:var(--ok)}
   li small{display:block;font-weight:400;color:var(--mute);font-size:11px}
-  li .st{font-size:12px;opacity:.85;white-space:nowrap}
-  li .acts{display:flex;gap:6px}
-  li .acts button{border:0;border-radius:8px;padding:6px 10px;font-weight:600;font-size:12px;cursor:pointer}
+  .st{font-size:12px;white-space:nowrap;padding:3px 8px;border-radius:99px}
+  .pendiente .st{background:var(--redbg)}.revision .st{background:var(--warnbg)}.ok .st{background:var(--okbg)}
+  .acts{display:flex;gap:6px}
+  .acts button{border:0;border-radius:8px;padding:6px 10px;font-weight:600;font-size:12px;cursor:pointer}
   .bok{background:var(--ok);color:#fff}.bno{background:#eee;color:#444}
   .empty{color:var(--mute);font-style:italic;cursor:default}
+  /* búsqueda por persona */
+  .person{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+  .person h3{margin:0 0 2px;font-size:17px}
+  .person .sub{font-size:13px;color:var(--ink2);margin-bottom:8px}
+  .person li{padding:9px 0}
+  .person ul{display:block;padding:0}
+  .person a{color:inherit;font-size:12px}
+  /* dashboard */
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .kpi .v{font-size:28px;font-weight:700;letter-spacing:-.5px}
+  .kpi .l{font-size:12px;color:var(--ink2);margin-top:2px}
+  .chart{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+  .chart h2{margin:0;font-size:16px}
+  .chart .desc{font-size:12px;color:var(--ink2);margin:3px 0 10px}
+  .clegend{display:flex;gap:14px;font-size:12px;color:var(--ink2);margin-bottom:10px}
+  .clegend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;background:var(--c)}
+  .hb{display:grid;grid-template-columns:1fr auto;grid-template-areas:"n val" "track track";align-items:center;gap:4px 8px;padding:6px 0;position:relative;cursor:default}
+  .hb .n{grid-area:n}.hb .val{grid-area:val}.hb .track{grid-area:track;background:var(--track);border-radius:4px}
+  @media (min-width:600px){.hb{grid-template-columns:minmax(120px,38%) 1fr 34px;grid-template-areas:"n track val"}}
+  .hb .n{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hb .track{display:flex;gap:2px;height:12px}
+  .hb .track i{display:block;height:100%}
+  .hb .track i:last-child{border-radius:0 4px 4px 0}
+  .hb .g{background:var(--ok)}.hb .y{background:var(--warnbar)}
+  .hb .val{font-size:13px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+  .hb:hover{background:#faf8f5}
+  .hb.zero .n{color:var(--red)}
+  .tip{position:fixed;pointer-events:none;background:#222;color:#fff;font-size:12px;padding:7px 10px;border-radius:8px;display:none;z-index:20;max-width:240px;line-height:1.4}
+  .more{display:block;width:100%;margin-top:8px;border:0;background:var(--track);border-radius:10px;padding:9px;font-weight:600;cursor:pointer}
+  /* modal */
   dialog{border:0;border-radius:16px;padding:20px;width:min(92vw,380px)}
   dialog::backdrop{background:rgba(0,0,0,.4)}
   dialog h3{margin:0 0 6px;font-size:17px}
@@ -44,23 +89,34 @@
   dialog .row{display:flex;gap:8px;justify-content:flex-end}
   dialog button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;font-size:14px;cursor:pointer}
   .primary{background:#222;color:#fff}
-  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;display:none}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;display:none;z-index:30}
 </style>
 </head>
 <body>
 <header>
   <h1>ELLAZ · Reviews Google</h1>
-  <p>Pica una ubicación y luego tu nombre cuando ya hayas dejado tu review</p>
   <div class="legend"><span class="r">● falta</span><span class="y">● en revisión</span><span class="g">● listo</span></div>
+  <div class="adminbar" id="adminbar"></div>
 </header>
-<div class="adminbar" id="adminbar"></div>
-<main id="app"></main>
+<nav class="tabs">
+  <button data-tab="tiendas" class="on">📍 Tiendas</button>
+  <button data-tab="dash">📊 Dashboard</button>
+</nav>
+<main>
+  <section id="tiendas">
+    <div class="search"><input id="q" placeholder="🔍 Busca tu nombre" autocomplete="off"><button id="qx" aria-label="Borrar">✕</button></div>
+    <p class="hint" id="hint">Busca tu nombre para ver en qué tiendas te falta, o toca una tienda para ver la lista.</p>
+    <div id="app"></div>
+  </section>
+  <section id="dash" hidden></section>
+</main>
 <dialog id="dlg">
   <h3 id="dlgTitle"></h3>
   <p>¿Ya dejaste tu review en Google? Escribe tu nombre como aparece en Google para que la podamos encontrar.</p>
   <input id="dlgGoogle" placeholder="Tu nombre en Google" autocomplete="name">
   <div class="row"><button id="dlgCancel">Cancelar</button><button class="primary" id="dlgSend">Ya la hice ✓</button></div>
 </dialog>
+<div class="tip" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script>
 // URL de la app web de Apps Script (ver apps-script/Code.gs)
@@ -172,11 +228,15 @@ let PIN = null;
 try { PIN = localStorage.getItem("ellazPin"); } catch (e) {}
 const isAdmin = () => !!PIN;
 const openLocs = new Set();
-const app = document.getElementById("app");
+let query = "", tab = "tiendas", showAllPeople = false;
+const $ = id => document.getElementById(id);
+const app = $("app");
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const byName = (a, b) => a.localeCompare(b, "es");
 
 function toast(msg) {
-  const t = document.getElementById("toast");
+  const t = $("toast");
   t.textContent = msg; t.style.display = "block";
   clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", 2500);
 }
@@ -187,74 +247,176 @@ async function api(body) {
 }
 
 async function load() {
-  if (!API) return render();
-  try {
-    const r = await fetch(API).then(r => r.json());
-    STATUS = {};
-    r.rows.forEach(x => STATUS[KEY(x.loc, x.name)] = { status: x.status, google: x.google });
-  } catch (e) { toast("No se pudo cargar el estado"); }
+  if (API) {
+    try {
+      const r = await fetch(API).then(r => r.json());
+      STATUS = {};
+      r.rows.forEach(x => STATUS[KEY(x.loc, x.name)] = { status: x.status, google: x.google });
+    } catch (e) { toast("No se pudo cargar el estado"); }
+  }
   render();
 }
 
-function render() {
+function statusOf(loc, name) {
+  return STATUS[KEY(loc.name, name)] || { status: (loc.verified || []).includes(name) ? "ok" : "pendiente", google: "" };
+}
+
+function locStats(loc) {
+  const c = { pendiente: 0, revision: 0, ok: 0 };
+  loc.people.forEach(n => c[statusOf(loc, n).status]++);
+  return c;
+}
+
+const stLabel = s => s === "ok" ? "✓ listo" : s === "revision" ? "en revisión" : "falta";
+
+function personRow(loc, p, showLoc) {
+  const label = showLoc ? esc(loc.name) : esc(p.name);
+  const right = isAdmin() && p.status === "revision"
+    ? `<span class="acts"><button class="bok" data-a="approve">OK</button><button class="bno" data-a="reject">✗</button></span>`
+    : isAdmin() && p.status === "ok"
+    ? `<span class="acts"><button class="bno" data-a="reject">deshacer</button></span>`
+    : `<span class="st">${stLabel(p.status)}</span>`;
+  const sub = p.google && isAdmin() ? `<small>Google: ${esc(p.google)}</small>`
+    : showLoc && p.status === "pendiente" && loc.maps ? `<small>toca para marcar · <a href="${loc.maps}" target="_blank" rel="noopener">abrir Maps</a></small>` : "";
+  return `<li class="${p.status}" data-loc="${esc(loc.name)}" data-name="${esc(p.name)}"><div>${label}${sub}</div>${right}</li>`;
+}
+
+function bindRows(root) {
+  root.querySelectorAll("li[data-name]").forEach(li => {
+    const loc = li.dataset.loc, name = li.dataset.name;
+    li.onclick = e => {
+      if (e.target.tagName === "A") return;
+      const a = e.target.dataset && e.target.dataset.a;
+      if (a) return adminAction(a, loc, name);
+      const st = statusOf(LOCATIONS.find(l => l.name === loc), name).status;
+      if (st === "pendiente") openSubmit(loc, name);
+      else if (!isAdmin()) toast(st === "ok" ? "Ya está lista ✓" : "Ya la mandaste, está en revisión");
+    };
+  });
+}
+
+function renderStores() {
+  const total = TEAM.length;
   app.innerHTML = "";
   LOCATIONS.forEach(loc => {
-    const people = [...loc.people].sort((a, b) => a.localeCompare(b, "es"))
-      .map(n => ({ name: n, ...(STATUS[KEY(loc.name, n)] || { status: (loc.verified || []).includes(n) ? "ok" : "pendiente", google: "" }) }));
-    const c = { pendiente: 0, revision: 0, ok: 0 };
-    people.forEach(p => c[p.status] = (c[p.status] || 0) + 1);
+    const c = locStats(loc);
+    const people = [...loc.people].sort(byName).map(n => ({ name: n, ...statusOf(loc, n) }));
     const div = document.createElement("div");
     div.className = "loc" + (openLocs.has(loc.name) ? " open" : "");
-    const badges = !people.length ? `<span class="badge">sin datos</span>`
-      : !c.pendiente && !c.revision ? `<span class="badge done">✓ completo</span>`
-      : (c.pendiente ? `<span class="badge">${c.pendiente} faltan</span>` : "") + (c.revision ? `<span class="badge y">${c.revision} en revisión</span>` : "");
     div.innerHTML = `
-      ${loc.photo ? `<img src="${loc.photo}" alt="${esc(loc.name)}">` : ""}
-      <button class="head"><span class="name">${esc(loc.name)}</span><span class="badges">${badges}</span></button>
+      ${loc.photo ? `<img src="${loc.photo}" alt="">` : ""}
+      <button class="head" aria-expanded="${openLocs.has(loc.name)}">
+        <div class="row1"><span class="lname">${esc(loc.name)}</span>
+          <span class="count"><b>${c.ok}</b> de ${total} listos${c.revision ? ` · ${c.revision} en revisión` : ""}</span></div>
+        <div class="bar"><i class="g" style="width:${c.ok / total * 100}%"></i><i class="y" style="width:${c.revision / total * 100}%"></i></div>
+        <div class="toggle"><span class="lbl">${openLocs.has(loc.name) ? "Ocultar nombres" : `Ver nombres · faltan ${c.pendiente}`}</span><span class="chev">▾</span></div>
+      </button>
       ${loc.maps ? `<a class="maps" href="${loc.maps}" target="_blank" rel="noopener">📍 Abrir en Google Maps · dejar review</a>` : ""}
-      <ul>${people.length ? people.map((p, i) => `
-        <li class="${p.status}" data-i="${i}">
-          <div>${esc(p.name)}${p.google && isAdmin() ? `<small>Google: ${esc(p.google)}</small>` : ""}</div>
-          ${isAdmin() && p.status === "revision"
-            ? `<span class="acts"><button class="bok" data-a="approve">OK</button><button class="bno" data-a="reject">✗</button></span>`
-            : isAdmin() && p.status === "ok"
-            ? `<span class="acts"><button class="bno" data-a="reject">deshacer</button></span>`
-            : `<span class="st">${p.status === "ok" ? "✓ listo" : p.status === "revision" ? "en revisión" : "falta"}</span>`}
-        </li>`).join("") : `<li class="empty">Aún no hay nombres</li>`}</ul>`;
-    const toggle = () => { div.classList.toggle("open"); div.classList.contains("open") ? openLocs.add(loc.name) : openLocs.delete(loc.name); };
+      <ul>${people.map(p => personRow(loc, p, false)).join("")}</ul>`;
+    const toggle = () => {
+      const open = div.classList.toggle("open");
+      open ? openLocs.add(loc.name) : openLocs.delete(loc.name);
+      div.querySelector(".head").setAttribute("aria-expanded", open);
+      div.querySelector(".lbl").textContent = open ? "Ocultar nombres" : `Ver nombres · faltan ${c.pendiente}`;
+    };
     div.querySelector(".head").onclick = toggle;
     const img = div.querySelector("img"); if (img) img.onclick = toggle;
-    div.querySelectorAll("li[data-i]").forEach(li => {
-      const p = people[+li.dataset.i];
-      li.onclick = async e => {
-        const a = e.target.dataset && e.target.dataset.a;
-        if (a) return adminAction(a, loc.name, p.name);
-        if (p.status === "pendiente") openSubmit(loc.name, p.name);
-        else if (!isAdmin()) toast(p.status === "ok" ? "Ya está aprobada ✓" : "Ya la mandaste, está en revisión");
-      };
-    });
+    bindRows(div);
     app.appendChild(div);
   });
-  document.getElementById("adminbar").innerHTML = isAdmin()
-    ? `Modo admin · <a href="#" id="logout">salir</a>` : "";
-  const lo = document.getElementById("logout");
+}
+
+function renderSearch() {
+  const q = norm(query.trim());
+  const matches = TEAM.filter(n => norm(n).includes(q)).sort(byName);
+  if (!matches.length) { app.innerHTML = `<p class="hint">No encontré “${esc(query)}”.</p>`; return; }
+  app.innerHTML = matches.slice(0, 8).map(name => {
+    const rows = LOCATIONS.map(loc => ({ loc, p: { name, ...statusOf(loc, name) } }));
+    const ok = rows.filter(r => r.p.status === "ok").length;
+    const order = { pendiente: 0, revision: 1, ok: 2 };
+    rows.sort((a, b) => order[a.p.status] - order[b.p.status]);
+    return `<div class="person"><h3>${esc(name)}</h3>
+      <div class="sub">${ok} de ${LOCATIONS.length} tiendas listas${ok < LOCATIONS.length ? " · toca una en rojo cuando ya hayas dejado tu review" : " 🎉"}</div>
+      <div class="bar" style="margin:0 0 6px"><i class="g" style="width:${ok / LOCATIONS.length * 100}%"></i></div>
+      <ul>${rows.map(r => personRow(r.loc, r.p, true)).join("")}</ul></div>`;
+  }).join("") + (matches.length > 8 ? `<p class="hint">Y ${matches.length - 8} más… escribe más letras.</p>` : "");
+  bindRows(app);
+}
+
+function hbar(name, ok, rev, max, tipHtml) {
+  return `<div class="hb${ok + rev === 0 ? " zero" : ""}" data-tip="${esc(tipHtml)}">
+    <span class="n">${esc(name)}</span>
+    <span class="track">${ok ? `<i class="g" style="width:${ok / max * 100}%"></i>` : ""}${rev ? `<i class="y" style="width:${rev / max * 100}%"></i>` : ""}</span>
+    <span class="val">${ok}</span></div>`;
+}
+
+function renderDash() {
+  const total = TEAM.length, nloc = LOCATIONS.length;
+  const stores = LOCATIONS.map(l => ({ name: l.name, ...locStats(l) })).sort((a, b) => b.ok - a.ok || byName(a.name, b.name));
+  const people = TEAM.map(n => {
+    let ok = 0, rev = 0; const faltan = [];
+    LOCATIONS.forEach(l => { const s = statusOf(l, n).status; if (s === "ok") ok++; else if (s === "revision") rev++; else faltan.push(l.name); });
+    return { name: n, ok, rev, faltan };
+  }).sort((a, b) => b.ok - a.ok || b.rev - a.rev || byName(a.name, b.name));
+  const done = people.reduce((s, p) => s + p.ok, 0);
+  const pending = people.reduce((s, p) => s + p.rev, 0);
+  const zero = people.filter(p => p.ok === 0).length;
+  const all = people.filter(p => p.ok === nloc).length;
+  const shown = showAllPeople ? people : people.slice(0, 20);
+  const legend = `<div class="clegend"><span style="--c:var(--ok)">Listo</span><span style="--c:var(--warnbar)">En revisión</span></div>`;
+  $("dash").innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="v">${done}</div><div class="l">reviews listas de ${total * nloc} posibles (${Math.round(done / (total * nloc) * 100)}%)</div></div>
+      <div class="kpi"><div class="v">${pending}</div><div class="l">en revisión</div></div>
+      <div class="kpi"><div class="v">${all}</div><div class="l">personas con las ${nloc} tiendas</div></div>
+      <div class="kpi"><div class="v" style="color:var(--red)">${zero}</div><div class="l">personas sin ninguna review</div></div>
+    </div>
+    <div class="chart"><h2>Reviews por tienda</h2><div class="desc">Personas del equipo que ya dejaron review (de ${total})</div>${legend}
+      ${stores.map(s => hbar(s.name, s.ok, s.revision, total, `<b>${s.name}</b><br>${s.ok} listos · ${s.revision} en revisión · ${s.pendiente} faltan`)).join("")}</div>
+    <div class="chart"><h2>Reviews por persona</h2><div class="desc">En cuántas de las ${nloc} tiendas ya dejó review cada quien</div>${legend}
+      ${shown.map(p => hbar(p.name, p.ok, p.rev, nloc, `<b>${p.name}</b><br>${p.ok} de ${nloc} listas${p.rev ? ` · ${p.rev} en revisión` : ""}${p.faltan.length ? `<br>Faltan: ${p.faltan.join(", ")}` : ""}`)).join("")}
+      <button class="more" id="more">${showAllPeople ? "Ver menos" : `Ver las ${total} personas`}</button></div>`;
+  $("more").onclick = () => { showAllPeople = !showAllPeople; renderDash(); };
+  const tip = $("tip");
+  $("dash").querySelectorAll(".hb").forEach(el => {
+    el.onmousemove = e => { tip.innerHTML = el.dataset.tip; tip.style.display = "block"; tip.style.left = Math.min(e.clientX + 12, innerWidth - 250) + "px"; tip.style.top = (e.clientY + 12) + "px"; };
+    el.onmouseleave = () => tip.style.display = "none";
+    el.onclick = e => { el.onmousemove(e); clearTimeout(tip._h); tip._h = setTimeout(() => tip.style.display = "none", 2500); };
+  });
+}
+
+function render() {
+  if (tab === "dash") renderDash();
+  else if (query.trim()) { renderSearch(); $("hint").style.display = "none"; }
+  else { renderStores(); $("hint").style.display = ""; }
+  $("adminbar").innerHTML = isAdmin() ? `Modo admin · <a href="#" id="logout">salir</a>` : "";
+  const lo = $("logout");
   if (lo) lo.onclick = e => { e.preventDefault(); PIN = null; try { localStorage.removeItem("ellazPin"); } catch (e) {} render(); };
 }
 
-const dlg = document.getElementById("dlg");
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+  $("tiendas").hidden = tab !== "tiendas"; $("dash").hidden = tab !== "dash";
+  render(); scrollTo(0, 0);
+});
+$("q").oninput = e => { query = e.target.value; $("qx").style.display = query ? "block" : "none"; render(); };
+$("qx").onclick = () => { $("q").value = ""; query = ""; $("qx").style.display = "none"; render(); };
+
+const dlg = $("dlg");
 let pending = null;
 function openSubmit(loc, name) {
   if (!API) return toast("Todavía no está conectado");
   pending = { loc, name };
-  document.getElementById("dlgTitle").textContent = name;
-  document.getElementById("dlgGoogle").value = "";
+  $("dlgTitle").textContent = name + " · " + loc;
+  $("dlgGoogle").value = "";
   dlg.showModal();
 }
-document.getElementById("dlgCancel").onclick = () => dlg.close();
-document.getElementById("dlgSend").onclick = async () => {
-  const google = document.getElementById("dlgGoogle").value.trim();
-  if (!google) return document.getElementById("dlgGoogle").focus();
-  const btn = document.getElementById("dlgSend"); btn.disabled = true;
+$("dlgCancel").onclick = () => dlg.close();
+$("dlgSend").onclick = async () => {
+  const google = $("dlgGoogle").value.trim();
+  if (!google) return $("dlgGoogle").focus();
+  const btn = $("dlgSend"); btn.disabled = true;
   try {
     const r = await api({ action: "submit", loc: pending.loc, name: pending.name, google });
     if (!r.ok) throw 0;
@@ -283,8 +445,9 @@ if (new URLSearchParams(location.search).has("admin") && !PIN && API) {
   });
 }
 
+render();
 load();
-setInterval(load, 60000);
+setInterval(() => { if (!dlg.open) load(); }, 60000);
 </script>
 </body>
 </html>
