@@ -5,98 +5,128 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ellaz Reviews</title>
 <style>
-  :root{--bg:#faf8f5;--card:#fff;--ink:#222;--mute:#888;--line:#eee;--red:#d62828;--ok:#2a9d5c}
+  :root{--bg:#faf8f5;--card:#fff;--ink:#222;--mute:#888;--line:#eee;--red:#d62828;--ok:#2a9d5c;--warn:#c98a00}
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
   header{padding:22px 16px 8px;text-align:center}
   h1{margin:0;font-size:22px;letter-spacing:.5px}
   header p{margin:4px 0 0;color:var(--mute);font-size:13px}
+  .legend{display:flex;gap:12px;justify-content:center;margin-top:8px;font-size:12px;font-weight:600}
+  .legend .r{color:var(--red)}.legend .y{color:var(--warn)}.legend .g{color:var(--ok)}
+  .adminbar{max-width:560px;margin:6px auto 0;padding:0 16px;font-size:12px;color:var(--mute);text-align:center}
   main{max-width:560px;margin:0 auto;padding:12px 16px 40px}
   .loc{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
   .loc img{display:block;width:100%;height:150px;object-fit:cover;cursor:pointer}
   .maps{display:block;margin:0 16px 14px;padding:11px;text-align:center;border-radius:10px;background:#222;color:#fff;text-decoration:none;font-weight:600;font-size:14px}
-  .loc>button{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;width:100%;padding:16px;box-sizing:border-box}
+  .loc>button{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;padding:16px;box-sizing:border-box}
   .loc .name{font-weight:600}
-  .badge{font-size:12px;padding:4px 10px;border-radius:99px;background:#fdecec;color:var(--red);font-weight:600}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .badge{font-size:12px;padding:4px 10px;border-radius:99px;background:#fdecec;color:var(--red);font-weight:600;white-space:nowrap}
+  .badge.y{background:#fff5d6;color:var(--warn)}
   .badge.done{background:#e8f6ee;color:var(--ok)}
   ul{list-style:none;margin:0;padding:0 16px 14px;display:none}
   .loc.open ul{display:block}
-  li{padding:9px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between}
-  li.no{color:var(--red);font-weight:600}
-  li.yes{color:var(--ink)}
-  li span{font-size:12px;opacity:.8}
-  .empty{color:var(--mute);font-style:italic}
+  li{padding:10px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer}
+  li.pendiente{color:var(--red);font-weight:600}
+  li.revision{color:var(--warn);font-weight:600}
+  li.ok{color:var(--ok)}
+  li small{display:block;font-weight:400;color:var(--mute);font-size:11px}
+  li .st{font-size:12px;opacity:.85;white-space:nowrap}
+  li .acts{display:flex;gap:6px}
+  li .acts button{border:0;border-radius:8px;padding:6px 10px;font-weight:600;font-size:12px;cursor:pointer}
+  .bok{background:var(--ok);color:#fff}.bno{background:#eee;color:#444}
+  .empty{color:var(--mute);font-style:italic;cursor:default}
+  dialog{border:0;border-radius:16px;padding:20px;width:min(92vw,380px)}
+  dialog::backdrop{background:rgba(0,0,0,.4)}
+  dialog h3{margin:0 0 6px;font-size:17px}
+  dialog p{margin:0 0 12px;color:#555;font-size:14px}
+  dialog input{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;font-size:16px;margin-bottom:12px}
+  dialog .row{display:flex;gap:8px;justify-content:flex-end}
+  dialog button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;font-size:14px;cursor:pointer}
+  .primary{background:#222;color:#fff}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;display:none}
 </style>
 </head>
 <body>
 <header>
   <h1>ELLAZ · Reviews Google</h1>
-  <p>Pica una ubicación · en <b style="color:#d62828">rojo</b> quien falta</p>
+  <p>Pica una ubicación y luego tu nombre cuando ya hayas dejado tu review</p>
+  <div class="legend"><span class="r">● falta</span><span class="y">● en revisión</span><span class="g">● listo</span></div>
 </header>
+<div class="adminbar" id="adminbar"></div>
 <main id="app"></main>
+<dialog id="dlg">
+  <h3 id="dlgTitle"></h3>
+  <p>¿Ya dejaste tu review en Google? Escribe tu nombre como aparece en Google para que la podamos encontrar.</p>
+  <input id="dlgGoogle" placeholder="Tu nombre en Google" autocomplete="name">
+  <div class="row"><button id="dlgCancel">Cancelar</button><button class="primary" id="dlgSend">Ya la hice ✓</button></div>
+</dialog>
+<div class="toast" id="toast"></div>
 <script>
-// review: true = ya puso review, false = falta
+// URL de la app web de Apps Script (ver apps-script/Code.gs)
+const API = "";
+
 const LOCATIONS = [
   { name: "Punto Valle", photo: "img/punto-valle.jpg", maps: "https://maps.app.goo.gl/JVkezuU9xg7hu78T7", people: [
-    { name: "Grecia Arq", review: false },
-    { name: "Jc Angeles Ellaz", review: false },
-    { name: "Vale Ayala", review: false },
-    { name: "Or Ben Galim", review: false },
-    { name: "Sylvia Ben Galim", review: false },
-    { name: "Esthela Bazaq", review: false },
-    { name: "Emilia Celis", review: false },
-    { name: "Escarlet Cisneros", review: false },
-    { name: "Pau Chapa", review: false },
-    { name: "Raquel Chapa", review: false },
-    { name: "Karen Daniela Ellaz", review: false },
-    { name: "Elo Ellaz Arcos", review: false },
-    { name: "Ana Emilia Ellaz", review: false },
-    { name: "Cura Ellaz", review: false },
-    { name: "Daniela Ellaz", review: false },
-    { name: "Emilia", review: false },
-    { name: "Fanny Ellaz", review: false },
-    { name: "Mabee Ellaz", review: false },
-    { name: "Moni Ellaz", review: false },
-    { name: "Susy Ellaz", review: false },
-    { name: "Xime Ellaz Calzada", review: false },
-    { name: "GS", review: false },
-    { name: "Michelle Gtz", review: false },
-    { name: "Anel Herrera", review: false },
-    { name: "Arturo Hdez Cancun Ellaz", review: false },
-    { name: "Marcelo Hernandez", review: false },
-    { name: "Pau Hintze", review: false },
-    { name: "Vale Huerta", review: false },
-    { name: "Sofia IMBulnes Ellaz", review: false },
-    { name: "Ari Lpz", review: false },
-    { name: "Regina Laviada", review: false },
-    { name: "Trisha Lee", review: false },
-    { name: "Wicho Luis Ellaz", review: false },
-    { name: "Chuy Distrital Mty", review: false },
-    { name: "Irving Narvaez Ellaz", review: false },
-    { name: "Eduardo Operaciones Ellaz", review: false },
-    { name: "Patsy", review: false },
-    { name: "Paulina", review: false },
-    { name: "Pam Sada Ellaz", review: false },
-    { name: "Juan Pablo Sada JP", review: false },
-    { name: "Samanta", review: false },
-    { name: "Jimena Ugalde Ellaz", review: false },
-    { name: "Eduardo Video", review: false },
-    { name: "Ivanna Villagomez", review: false },
-    { name: "Catalina Zertuche", review: false },
-    { name: "Dilan Alvarez Tio Ben", review: false },
-    { name: "Vale Contreras Tio Ben", review: false },
-    { name: "Jaime Martinez Tio Ben", review: false },
-    { name: "Pamela Rdz Tio Ben", review: false },
-    { name: "Karen Tio Ben", review: false },
-    { name: "Fer Guerra", review: false },
-    { name: "Vis", review: false },
-    { name: "Pablo Zubieta", review: false },
-    { name: "Barbara", review: false },
-    { name: "GLM", review: false },
-    { name: "Gutierrez", review: false },
-    { name: "Marcelo Elizondo", review: false },
-    { name: "+52 81 3120 5088", review: false },
-    { name: "Angel Galim Health", review: false }
+    "Grecia Arq",
+    "Jc Angeles Ellaz",
+    "Vale Ayala",
+    "Or Ben Galim",
+    "Sylvia Ben Galim",
+    "Esthela Bazaq",
+    "Emilia Celis",
+    "Escarlet Cisneros",
+    "Pau Chapa",
+    "Raquel Chapa",
+    "Karen Daniela Ellaz",
+    "Elo Ellaz Arcos",
+    "Ana Emilia Ellaz",
+    "Cura Ellaz",
+    "Daniela Ellaz",
+    "Emilia",
+    "Fanny Ellaz",
+    "Mabee Ellaz",
+    "Moni Ellaz",
+    "Susy Ellaz",
+    "Xime Ellaz Calzada",
+    "GS",
+    "Michelle Gtz",
+    "Anel Herrera",
+    "Arturo Hdez Cancun Ellaz",
+    "Marcelo Hernandez",
+    "Pau Hintze",
+    "Vale Huerta",
+    "Sofia IMBulnes Ellaz",
+    "Ari Lpz",
+    "Regina Laviada",
+    "Trisha Lee",
+    "Wicho Luis Ellaz",
+    "Chuy Distrital Mty",
+    "Irving Narvaez Ellaz",
+    "Eduardo Operaciones Ellaz",
+    "Patsy",
+    "Paulina",
+    "Pam Sada Ellaz",
+    "Juan Pablo Sada JP",
+    "Samanta",
+    "Jimena Ugalde Ellaz",
+    "Eduardo Video",
+    "Ivanna Villagomez",
+    "Catalina Zertuche",
+    "Dilan Alvarez Tio Ben",
+    "Vale Contreras Tio Ben",
+    "Jaime Martinez Tio Ben",
+    "Pamela Rdz Tio Ben",
+    "Karen Tio Ben",
+    "Fer Guerra",
+    "Vis",
+    "Pablo Zubieta",
+    "Barbara",
+    "GLM",
+    "Gutierrez",
+    "Marcelo Elizondo",
+    "+52 81 3120 5088",
+    "Angel Galim Health"
   ] },
   { name: "Ubicación 2", people: [] },
   { name: "Ubicación 3", people: [] },
@@ -109,24 +139,125 @@ const LOCATIONS = [
   { name: "Ubicación 10", people: [] },
 ];
 
+const KEY = (loc, name) => loc + "|" + name;
+let STATUS = {};          // "loc|name" -> {status, google}
+let PIN = null;
+try { PIN = localStorage.getItem("ellazPin"); } catch (e) {}
+const isAdmin = () => !!PIN;
+const openLocs = new Set();
 const app = document.getElementById("app");
-LOCATIONS.forEach(loc => {
-  const people = [...loc.people].sort((a,b) => a.name.localeCompare(b.name, "es"));
-  const missing = people.filter(p => !p.review).length;
-  const div = document.createElement("div");
-  div.className = "loc";
-  div.innerHTML = `
-    ${loc.photo ? `<img src="${loc.photo}" alt="${loc.name}">` : ""}
-    <button><span class="name">${loc.name}</span>
-      <span class="badge ${people.length && !missing ? "done" : ""}">${people.length ? (missing ? missing + " faltan" : "✓ completo") : "sin datos"}</span>
-    </button>
-    ${loc.maps ? `<a class="maps" href="${loc.maps}" target="_blank">📍 Abrir en Google Maps · dejar review</a>` : ""}
-    <ul>${people.length ? people.map(p => `<li class="${p.review ? "yes" : "no"}">${p.name}<span>${p.review ? "✓" : "falta"}</span></li>`).join("") : `<li class="empty">Aún no hay nombres</li>`}</ul>`;
-  div.querySelector("button").onclick = () => div.classList.toggle("open");
-  const img = div.querySelector("img");
-  if (img) img.onclick = () => div.classList.toggle("open");
-  app.appendChild(div);
-});
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", 2500);
+}
+
+async function api(body) {
+  const r = await fetch(API, { method: "POST", body: JSON.stringify(body) });
+  return r.json();
+}
+
+async function load() {
+  if (!API) return render();
+  try {
+    const r = await fetch(API).then(r => r.json());
+    STATUS = {};
+    r.rows.forEach(x => STATUS[KEY(x.loc, x.name)] = { status: x.status, google: x.google });
+  } catch (e) { toast("No se pudo cargar el estado"); }
+  render();
+}
+
+function render() {
+  app.innerHTML = "";
+  LOCATIONS.forEach(loc => {
+    const people = [...loc.people].sort((a, b) => a.localeCompare(b, "es"))
+      .map(n => ({ name: n, ...(STATUS[KEY(loc.name, n)] || { status: "pendiente", google: "" }) }));
+    const c = { pendiente: 0, revision: 0, ok: 0 };
+    people.forEach(p => c[p.status] = (c[p.status] || 0) + 1);
+    const div = document.createElement("div");
+    div.className = "loc" + (openLocs.has(loc.name) ? " open" : "");
+    const badges = !people.length ? `<span class="badge">sin datos</span>`
+      : !c.pendiente && !c.revision ? `<span class="badge done">✓ completo</span>`
+      : (c.pendiente ? `<span class="badge">${c.pendiente} faltan</span>` : "") + (c.revision ? `<span class="badge y">${c.revision} en revisión</span>` : "");
+    div.innerHTML = `
+      ${loc.photo ? `<img src="${loc.photo}" alt="${esc(loc.name)}">` : ""}
+      <button class="head"><span class="name">${esc(loc.name)}</span><span class="badges">${badges}</span></button>
+      ${loc.maps ? `<a class="maps" href="${loc.maps}" target="_blank" rel="noopener">📍 Abrir en Google Maps · dejar review</a>` : ""}
+      <ul>${people.length ? people.map((p, i) => `
+        <li class="${p.status}" data-i="${i}">
+          <div>${esc(p.name)}${p.google && isAdmin() ? `<small>Google: ${esc(p.google)}</small>` : ""}</div>
+          ${isAdmin() && p.status === "revision"
+            ? `<span class="acts"><button class="bok" data-a="approve">OK</button><button class="bno" data-a="reject">✗</button></span>`
+            : isAdmin() && p.status === "ok"
+            ? `<span class="acts"><button class="bno" data-a="reject">deshacer</button></span>`
+            : `<span class="st">${p.status === "ok" ? "✓ listo" : p.status === "revision" ? "en revisión" : "falta"}</span>`}
+        </li>`).join("") : `<li class="empty">Aún no hay nombres</li>`}</ul>`;
+    const toggle = () => { div.classList.toggle("open"); div.classList.contains("open") ? openLocs.add(loc.name) : openLocs.delete(loc.name); };
+    div.querySelector(".head").onclick = toggle;
+    const img = div.querySelector("img"); if (img) img.onclick = toggle;
+    div.querySelectorAll("li[data-i]").forEach(li => {
+      const p = people[+li.dataset.i];
+      li.onclick = async e => {
+        const a = e.target.dataset && e.target.dataset.a;
+        if (a) return adminAction(a, loc.name, p.name);
+        if (p.status === "pendiente") openSubmit(loc.name, p.name);
+        else if (!isAdmin()) toast(p.status === "ok" ? "Ya está aprobada ✓" : "Ya la mandaste, está en revisión");
+      };
+    });
+    app.appendChild(div);
+  });
+  document.getElementById("adminbar").innerHTML = isAdmin()
+    ? `Modo admin · <a href="#" id="logout">salir</a>` : "";
+  const lo = document.getElementById("logout");
+  if (lo) lo.onclick = e => { e.preventDefault(); PIN = null; try { localStorage.removeItem("ellazPin"); } catch (e) {} render(); };
+}
+
+const dlg = document.getElementById("dlg");
+let pending = null;
+function openSubmit(loc, name) {
+  if (!API) return toast("Todavía no está conectado");
+  pending = { loc, name };
+  document.getElementById("dlgTitle").textContent = name;
+  document.getElementById("dlgGoogle").value = "";
+  dlg.showModal();
+}
+document.getElementById("dlgCancel").onclick = () => dlg.close();
+document.getElementById("dlgSend").onclick = async () => {
+  const google = document.getElementById("dlgGoogle").value.trim();
+  if (!google) return document.getElementById("dlgGoogle").focus();
+  const btn = document.getElementById("dlgSend"); btn.disabled = true;
+  try {
+    const r = await api({ action: "submit", loc: pending.loc, name: pending.name, google });
+    if (!r.ok) throw 0;
+    STATUS[KEY(pending.loc, pending.name)] = { status: r.status, google };
+    dlg.close(); render(); toast("¡Gracias! Quedó en revisión 💛");
+  } catch (e) { toast("No se pudo enviar, intenta otra vez"); }
+  btn.disabled = false;
+};
+
+async function adminAction(action, loc, name) {
+  try {
+    const r = await api({ action, pin: PIN, loc, name });
+    if (!r.ok) return toast(r.error || "Error");
+    const cur = STATUS[KEY(loc, name)] || {};
+    STATUS[KEY(loc, name)] = { ...cur, status: r.status };
+    render();
+  } catch (e) { toast("Error de conexión"); }
+}
+
+// Modo admin: abrir la página con ?admin
+if (new URLSearchParams(location.search).has("admin") && !PIN && API) {
+  const p = prompt("PIN de admin");
+  if (p) api({ action: "check", pin: p }).then(r => {
+    if (r.ok) { PIN = p; try { localStorage.setItem("ellazPin", p); } catch (e) {} render(); toast("Modo admin activado"); }
+    else toast("PIN incorrecto");
+  });
+}
+
+load();
+setInterval(load, 60000);
 </script>
 </body>
 </html>
