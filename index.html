@@ -8,7 +8,10 @@
   :root{--bg:#faf8f5;--card:#fff;--ink:#222;--ink2:#555;--mute:#8a8a8a;--line:#ece9e4;--track:#f1eeea;
     --red:#d62828;--redbg:#fdecec;--ok:#2a9d5c;--okbg:#e8f6ee;--warn:#b07900;--warnbar:#d9a21b;--warnbg:#fff5d6}
   *{box-sizing:border-box}
-  body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent}
+  html{touch-action:manipulation;-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+  body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent;overflow-x:hidden;overscroll-behavior-y:none}
+  button,li,a,input{touch-action:manipulation}
+  li:active,.head:active .toggle,.tabs button:active{opacity:.6}
   header{padding:22px 16px 6px;text-align:center}
   h1{margin:0;font-size:22px;letter-spacing:.5px}
   .legend{display:flex;gap:12px;justify-content:center;margin-top:8px;font-size:12px;font-weight:600}
@@ -246,15 +249,20 @@ async function api(body) {
   return r.json();
 }
 
+// Solo vuelve a dibujar si algo cambió en el Sheet (evita saltos y toques perdidos)
+let lastData = "";
 async function load() {
-  if (API) {
-    try {
-      const r = await fetch(API).then(r => r.json());
-      STATUS = {};
-      r.rows.forEach(x => STATUS[KEY(x.loc, x.name)] = { status: x.status, google: x.google });
-    } catch (e) { toast("No se pudo cargar el estado"); }
-  }
-  render();
+  if (!API) return;
+  try {
+    const r = await fetch(API).then(r => r.json());
+    const next = {};
+    r.rows.forEach(x => next[KEY(x.loc, x.name)] = { status: x.status, google: x.google });
+    const data = JSON.stringify(next);
+    if (data === lastData) return;
+    lastData = data; STATUS = next;
+    if (dlg.open) return;
+    const y = scrollY; render(); scrollTo(0, y);
+  } catch (e) {}
 }
 
 function statusOf(loc, name) {
@@ -304,7 +312,7 @@ function renderStores() {
     const div = document.createElement("div");
     div.className = "loc" + (openLocs.has(loc.name) ? " open" : "");
     div.innerHTML = `
-      ${loc.photo ? `<img src="${loc.photo}" alt="">` : ""}
+      ${loc.photo ? `<img src="${loc.photo}" alt="" width="560" height="120" decoding="async">` : ""}
       <button class="head" aria-expanded="${openLocs.has(loc.name)}">
         <div class="row1"><span class="lname">${esc(loc.name)}</span>
           <span class="count"><b>${c.ok}</b> de ${total} listos${c.revision ? ` · ${c.revision} en Revisión` : ""}</span></div>
@@ -379,9 +387,9 @@ function renderDash() {
   $("more").onclick = () => { showAllPeople = !showAllPeople; renderDash(); };
   const tip = $("tip");
   $("dash").querySelectorAll(".hb").forEach(el => {
-    el.onmousemove = e => { tip.innerHTML = el.dataset.tip; tip.style.display = "block"; tip.style.left = Math.min(e.clientX + 12, innerWidth - 250) + "px"; tip.style.top = (e.clientY + 12) + "px"; };
-    el.onmouseleave = () => tip.style.display = "none";
-    el.onclick = e => { el.onmousemove(e); clearTimeout(tip._h); tip._h = setTimeout(() => tip.style.display = "none", 2500); };
+    el.onpointermove = e => { if (e.pointerType !== "mouse") return; tip.innerHTML = el.dataset.tip; tip.style.display = "block"; tip.style.left = Math.min(e.clientX + 12, innerWidth - 250) + "px"; tip.style.top = (e.clientY + 12) + "px"; };
+    el.onpointerleave = () => tip.style.display = "none";
+    el.onclick = e => { tip.innerHTML = el.dataset.tip; tip.style.display = "block"; tip.style.left = Math.min(e.clientX + 12, innerWidth - 250) + "px"; tip.style.top = Math.min(e.clientY + 12, innerHeight - 120) + "px"; clearTimeout(tip._h); tip._h = setTimeout(() => tip.style.display = "none", 2500); };
   });
 }
 
