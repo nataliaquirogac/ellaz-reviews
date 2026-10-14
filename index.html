@@ -83,6 +83,26 @@
   .hb.zero .n{color:var(--red)}
   .tip{position:fixed;pointer-events:none;background:#222;color:#fff;font-size:12px;padding:7px 10px;border-radius:8px;display:none;z-index:20;max-width:240px;line-height:1.4}
   .more{display:block;width:100%;margin-top:8px;border:0;background:var(--track);border-radius:10px;padding:9px;font-weight:600;cursor:pointer}
+  /* admin */
+  .pill{display:inline-block;min-width:20px;padding:1px 6px;border-radius:99px;background:var(--warnbar);color:#222;font-size:12px;margin-left:2px}
+  .pill:empty{display:none}
+  .tabs button{padding:10px 6px;font-size:13px}
+  .aperson{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+  .aphead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+  .aphead h3{margin:0;font-size:16px}
+  .aphead small{color:var(--ink2);font-size:12px}
+  .all{border:0;border-radius:10px;padding:8px 12px;font-weight:600;font-size:13px;background:var(--ok);color:#fff;cursor:pointer;white-space:nowrap}
+  .arow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+  .arow .info{min-width:0}
+  .arow .loc-n{font-weight:600;font-size:15px}
+  .arow .g{font-size:12px;color:var(--ink2)}
+  .arow .g a{color:var(--ink2)}
+  .abtns{display:flex;gap:6px;flex-shrink:0}
+  .abtns button{border:0;border-radius:10px;width:44px;height:40px;font-size:18px;font-weight:700;cursor:pointer}
+  .abtns .y{background:var(--ok);color:#fff}.abtns .n{background:var(--redbg);color:var(--red)}
+  .arow.busy{opacity:.4;pointer-events:none}
+  .aempty{text-align:center;color:var(--ink2);padding:40px 16px;font-size:15px}
+  .ahint{font-size:13px;color:var(--ink2);text-align:center;margin:0 0 12px}
   /* modal */
   dialog{border:0;border-radius:16px;padding:20px;width:min(92vw,380px)}
   dialog::backdrop{background:rgba(0,0,0,.4)}
@@ -104,6 +124,7 @@
 <nav class="tabs">
   <button data-tab="tiendas" class="on">📍 Tiendas</button>
   <button data-tab="dash">📊 Dashboard</button>
+  <button data-tab="admin" id="adminTab" hidden>✅ Aprobar <span id="pendN" class="pill"></span></button>
 </nav>
 <main>
   <section id="tiendas">
@@ -112,6 +133,7 @@
     <div id="app"></div>
   </section>
   <section id="dash" hidden></section>
+  <section id="admin" hidden></section>
 </main>
 <dialog id="dlg">
   <h3 id="dlgTitle"></h3>
@@ -393,8 +415,53 @@ function renderDash() {
   });
 }
 
+function pendingList() {
+  const out = [];
+  LOCATIONS.forEach(loc => loc.people.forEach(name => {
+    const st = statusOf(loc, name);
+    if (st.status === "revision") out.push({ loc, name, google: st.google });
+  }));
+  return out;
+}
+
+function renderAdmin() {
+  const items = pendingList();
+  if (!items.length) { $("admin").innerHTML = `<div class="aempty">🎉 No hay reseñas por aprobar.</div>`; return; }
+  const groups = {};
+  items.forEach(it => (groups[it.name] = groups[it.name] || []).push(it));
+  $("admin").innerHTML = `<p class="ahint">${items.length} por aprobar. Revisa en Google que la reseña exista y aprueba con ✓.</p>` +
+    Object.keys(groups).sort(byName).map(name => `
+    <div class="aperson" data-name="${esc(name)}">
+      <div class="aphead"><div><h3>${esc(name)}</h3><small>${groups[name].length} por aprobar</small></div>
+        ${groups[name].length > 1 ? `<button class="all">✓ Aprobar todas</button>` : ""}</div>
+      ${groups[name].map(it => `
+        <div class="arow" data-loc="${esc(it.loc.name)}">
+          <div class="info"><div class="loc-n">${esc(it.loc.name)}</div>
+            <div class="g">Google: <b>${esc(it.google || "—")}</b>${it.loc.maps ? ` · <a href="${it.loc.maps}" target="_blank" rel="noopener">ver en Maps</a>` : ""}</div></div>
+          <div class="abtns"><button class="n" data-a="reject" aria-label="Rechazar">✗</button><button class="y" data-a="approve" aria-label="Aprobar">✓</button></div>
+        </div>`).join("")}
+    </div>`).join("");
+  $("admin").querySelectorAll(".arow button").forEach(b => b.onclick = async () => {
+    const row = b.closest(".arow"), name = b.closest(".aperson").dataset.name;
+    row.classList.add("busy");
+    await adminAction(b.dataset.a, row.dataset.loc, name, true);
+    render();
+  });
+  $("admin").querySelectorAll(".all").forEach(b => b.onclick = async () => {
+    const card = b.closest(".aperson"), name = card.dataset.name;
+    b.disabled = true; b.textContent = "Aprobando…";
+    for (const row of card.querySelectorAll(".arow")) { row.classList.add("busy"); await adminAction("approve", row.dataset.loc, name, true); }
+    render(); toast("Aprobadas ✓");
+  });
+}
+
 function render() {
-  if (tab === "dash") renderDash();
+  const n = isAdmin() ? pendingList().length : 0;
+  $("adminTab").hidden = !isAdmin();
+  $("pendN").textContent = n || "";
+  if (tab === "admin" && !isAdmin()) setTab("tiendas");
+  if (tab === "admin") renderAdmin();
+  else if (tab === "dash") renderDash();
   else if (query.trim()) { renderSearch(); $("hint").style.display = "none"; }
   else { renderStores(); $("hint").style.display = ""; }
   $("adminbar").innerHTML = isAdmin() ? `Modo admin · <a href="#" id="logout">salir</a>` : "";
@@ -402,12 +469,12 @@ function render() {
   if (lo) lo.onclick = e => { e.preventDefault(); PIN = null; try { localStorage.removeItem("ellazPin"); } catch (e) {} render(); };
 }
 
-document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
-  tab = b.dataset.tab;
-  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
-  $("tiendas").hidden = tab !== "tiendas"; $("dash").hidden = tab !== "dash";
-  render(); scrollTo(0, 0);
-});
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x.dataset.tab === t));
+  ["tiendas", "dash", "admin"].forEach(id => $(id).hidden = id !== t);
+}
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => { setTab(b.dataset.tab); render(); scrollTo(0, 0); });
 $("q").oninput = e => { query = e.target.value; $("qx").style.display = query ? "block" : "none"; render(); };
 $("qx").onclick = () => { $("q").value = ""; query = ""; $("qx").style.display = "none"; render(); };
 
@@ -434,13 +501,14 @@ $("dlgSend").onclick = async () => {
   btn.disabled = false;
 };
 
-async function adminAction(action, loc, name) {
+async function adminAction(action, loc, name, quiet) {
   try {
     const r = await api({ action, pin: PIN, loc, name });
     if (!r.ok) return toast(r.error || "Error");
     const cur = STATUS[KEY(loc, name)] || {};
     STATUS[KEY(loc, name)] = { ...cur, status: r.status };
-    render();
+    lastData = "";
+    if (!quiet) render();
   } catch (e) { toast("Error de conexión"); }
 }
 
@@ -448,11 +516,12 @@ async function adminAction(action, loc, name) {
 if (new URLSearchParams(location.search).has("admin") && !PIN && API) {
   const p = prompt("PIN de admin");
   if (p) api({ action: "check", pin: p }).then(r => {
-    if (r.ok) { PIN = p; try { localStorage.setItem("ellazPin", p); } catch (e) {} render(); toast("Modo admin activado"); }
+    if (r.ok) { PIN = p; try { localStorage.setItem("ellazPin", p); } catch (e) {} setTab("admin"); render(); toast("Modo admin activado"); }
     else toast("PIN incorrecto");
   });
 }
 
+if (isAdmin()) setTab("admin");
 render();
 load();
 setInterval(() => { if (!dlg.open) load(); }, 60000);
