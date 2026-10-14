@@ -70,7 +70,7 @@
   .chart .desc{font-size:12px;color:var(--ink2);margin:3px 0 10px}
   .clegend{display:flex;gap:14px;font-size:12px;color:var(--ink2);margin-bottom:10px}
   .clegend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;background:var(--c)}
-  .hb{display:grid;grid-template-columns:1fr auto;grid-template-areas:"n val" "track track";align-items:center;gap:4px 8px;padding:6px 0;position:relative;cursor:default}
+  .hb{display:grid;grid-template-columns:1fr auto;grid-template-areas:"n val" "track track";align-items:center;gap:4px 8px;padding:6px 4px;position:relative}
   .hb .n{grid-area:n}.hb .val{grid-area:val}.hb .track{grid-area:track;background:var(--track);border-radius:4px}
   @media (min-width:600px){.hb{grid-template-columns:minmax(120px,38%) 1fr 34px;grid-template-areas:"n track val"}}
   .hb .n{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -79,7 +79,9 @@
   .hb .track i:last-child{border-radius:0 4px 4px 0}
   .hb .g{background:var(--ok)}.hb .y{background:var(--warnbar)}
   .hb .val{font-size:13px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
-  .hb:hover{background:#faf8f5}
+  .hb{cursor:pointer;border-radius:6px}
+  .hb:hover,.hb:active{background:#f6f3ef}
+  .hb .n::after{content:" ›";color:var(--mute)}
   .hb.zero .n{color:var(--red)}
   .tip{position:fixed;pointer-events:none;background:#222;color:#fff;font-size:12px;padding:7px 10px;border-radius:8px;display:none;z-index:20;max-width:240px;line-height:1.4}
   .more{display:block;width:100%;margin-top:8px;border:0;background:var(--track);border-radius:10px;padding:9px;font-weight:600;cursor:pointer}
@@ -374,8 +376,8 @@ function renderSearch() {
   bindRows(app);
 }
 
-function hbar(name, ok, rev, max, tipHtml) {
-  return `<div class="hb${ok + rev === 0 ? " zero" : ""}" data-tip="${esc(tipHtml)}">
+function hbar(name, ok, rev, max, tipHtml, kind) {
+  return `<div class="hb${ok + rev === 0 ? " zero" : ""}" data-tip="${esc(tipHtml)}" data-kind="${kind}" data-name="${esc(name)}">
     <span class="n">${esc(name)}</span>
     <span class="track">${ok ? `<i class="g" style="width:${ok / max * 100}%"></i>` : ""}${rev ? `<i class="y" style="width:${rev / max * 100}%"></i>` : ""}</span>
     <span class="val">${ok}</span></div>`;
@@ -402,17 +404,17 @@ function renderDash() {
       <div class="kpi"><div class="v">${all}</div><div class="l">personas con las ${nloc} tiendas</div></div>
       <div class="kpi"><div class="v" style="color:var(--red)">${zero}</div><div class="l">personas sin ninguna review</div></div>
     </div>
-    <div class="chart"><h2>Reviews por tienda</h2><div class="desc">Personas del equipo que ya dejaron review (de ${total})</div>${legend}
-      ${stores.map(s => hbar(s.name, s.ok, s.revision, total, `<b>${s.name}</b><br>${s.ok} listos · ${s.revision} en Revisión · ${s.pendiente} faltantes`)).join("")}</div>
-    <div class="chart"><h2>Reviews por persona</h2><div class="desc">En cuántas de las ${nloc} tiendas ya dejó review cada quien</div>${legend}
-      ${shown.map(p => hbar(p.name, p.ok, p.rev, nloc, `<b>${p.name}</b><br>${p.ok} de ${nloc} listas${p.rev ? ` · ${p.rev} en Revisión` : ""}${p.faltan.length ? `<br>Faltantes: ${p.faltan.join(", ")}` : ""}`)).join("")}
+    <div class="chart"><h2>Reviews por tienda</h2><div class="desc">Personas del equipo que ya dejaron reseña (de ${total}) · toca una tienda para ver los nombres</div>${legend}
+      ${stores.map(s => hbar(s.name, s.ok, s.revision, total, `<b>${s.name}</b><br>${s.ok} listos · ${s.revision} en Revisión · ${s.pendiente} faltantes<br><i>Toca para ver la tienda</i>`, "store")).join("")}</div>
+    <div class="chart"><h2>Reviews por persona</h2><div class="desc">En cuántas de las ${nloc} tiendas ya dejó reseña cada quien · toca un nombre para ver su detalle</div>${legend}
+      ${shown.map(p => hbar(p.name, p.ok, p.rev, nloc, `<b>${p.name}</b><br>${p.ok} de ${nloc} listas${p.rev ? ` · ${p.rev} en Revisión` : ""}${p.faltan.length ? `<br>Faltantes: ${p.faltan.join(", ")}` : ""}<br><i>Toca para ver su detalle</i>`, "person")).join("")}
       <button class="more" id="more">${showAllPeople ? "Ver menos" : `Ver las ${total} personas`}</button></div>`;
   $("more").onclick = () => { showAllPeople = !showAllPeople; renderDash(); };
   const tip = $("tip");
   $("dash").querySelectorAll(".hb").forEach(el => {
     el.onpointermove = e => { if (e.pointerType !== "mouse") return; tip.innerHTML = el.dataset.tip; tip.style.display = "block"; tip.style.left = Math.min(e.clientX + 12, innerWidth - 250) + "px"; tip.style.top = (e.clientY + 12) + "px"; };
     el.onpointerleave = () => tip.style.display = "none";
-    el.onclick = e => { tip.innerHTML = el.dataset.tip; tip.style.display = "block"; tip.style.left = Math.min(e.clientX + 12, innerWidth - 250) + "px"; tip.style.top = Math.min(e.clientY + 12, innerHeight - 120) + "px"; clearTimeout(tip._h); tip._h = setTimeout(() => tip.style.display = "none", 2500); };
+    el.onclick = () => { tip.style.display = "none"; el.dataset.kind === "person" ? showPerson(el.dataset.name) : showStore(el.dataset.name); };
   });
 }
 
@@ -454,6 +456,18 @@ function renderAdmin() {
     for (const row of card.querySelectorAll(".arow")) { row.classList.add("busy"); await adminAction("approve", row.dataset.loc, name, true); }
     render(); toast("Aprobadas ✓");
   });
+}
+
+// Desde el dashboard: abrir la vista de una persona o de una tienda
+function showPerson(name) {
+  query = name; $("q").value = name; $("qx").style.display = "block";
+  setTab("tiendas"); render(); scrollTo(0, 0);
+}
+function showStore(name) {
+  query = ""; $("q").value = ""; $("qx").style.display = "none";
+  openLocs.add(name); setTab("tiendas"); render();
+  const card = [...document.querySelectorAll(".loc")].find(c => c.querySelector(".lname").textContent === name);
+  if (card) card.scrollIntoView({ block: "start" }), scrollBy(0, -64);
 }
 
 function render() {
