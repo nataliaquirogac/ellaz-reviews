@@ -66,8 +66,8 @@
 // URL de la app web de Apps Script (ver apps-script/Code.gs)
 const API = "https://script.google.com/macros/s/AKfycbwDqUAkPU2-vTUaESRdRXUQTgOHQD7envZ_ixNVfmH1pQX_Lz8NLVHcWx08deaAdryJew/exec";
 
-const LOCATIONS = [
-  { name: "Punto Valle", photo: "img/punto-valle.jpg", maps: "https://maps.app.goo.gl/JVkezuU9xg7hu78T7", people: [
+// Equipo que debe dejar review (mismo para todas las ubicaciones)
+const TEAM = [
     "Grecia Arq",
     "Jc Angeles Ellaz",
     "Vale Ayala",
@@ -127,8 +127,14 @@ const LOCATIONS = [
     "Marcelo Elizondo",
     "+52 81 3120 5088",
     "Angel Galim Health"
-  ] },
-  { name: "Ubicación 2", people: [] },
+];
+
+// verified = los que ya vi en Google (salen en verde)
+const LOCATIONS = [
+  { name: "Punto Valle", photo: "img/punto-valle.jpg", maps: "https://maps.app.goo.gl/JVkezuU9xg7hu78T7", people: TEAM,
+    verified: ["Vale Contreras Tio Ben"] },
+  { name: "Calzada", photo: "img/calzada.jpg", maps: "https://maps.app.goo.gl/KNAbSSFj9gS1iehz5", people: TEAM,
+    verified: ["Barbara", "Dilan Alvarez Tio Ben", "Emilia Celis", "Jimena Ugalde Ellaz", "Vale Contreras Tio Ben"] },
   { name: "Ubicación 3", people: [] },
   { name: "Ubicación 4", people: [] },
   { name: "Ubicación 5", people: [] },
@@ -173,7 +179,7 @@ function render() {
   app.innerHTML = "";
   LOCATIONS.forEach(loc => {
     const people = [...loc.people].sort((a, b) => a.localeCompare(b, "es"))
-      .map(n => ({ name: n, ...(STATUS[KEY(loc.name, n)] || { status: "pendiente", google: "" }) }));
+      .map(n => ({ name: n, ...(STATUS[KEY(loc.name, n)] || { status: (loc.verified || []).includes(n) ? "ok" : "pendiente", google: "" }) }));
     const c = { pendiente: 0, revision: 0, ok: 0 };
     people.forEach(p => c[p.status] = (c[p.status] || 0) + 1);
     const div = document.createElement("div");
