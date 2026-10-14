@@ -95,7 +95,7 @@
 <body>
 <header>
   <h1>ELLAZ · Reviews Google</h1>
-  <div class="legend"><span class="r">● falta</span><span class="y">● en revisión</span><span class="g">● listo</span></div>
+  <div class="legend"><span class="r">● Faltante</span><span class="y">● En Revisión</span><span class="g">● Listo</span></div>
   <div class="adminbar" id="adminbar"></div>
 </header>
 <nav class="tabs">
@@ -105,7 +105,7 @@
 <main>
   <section id="tiendas">
     <div class="search"><input id="q" placeholder="🔍 Busca tu nombre" autocomplete="off"><button id="qx" aria-label="Borrar">✕</button></div>
-    <p class="hint" id="hint">Busca tu nombre para ver en qué tiendas te falta, o toca una tienda para ver la lista.</p>
+    <p class="hint" id="hint">Busca tu nombre para ver en qué tiendas te falta dejar reseña, o toca una tienda para ver la lista.</p>
     <div id="app"></div>
   </section>
   <section id="dash" hidden></section>
@@ -267,7 +267,7 @@ function locStats(loc) {
   return c;
 }
 
-const stLabel = s => s === "ok" ? "✓ listo" : s === "revision" ? "en revisión" : "falta";
+const stLabel = s => s === "ok" ? "✓ Listo" : s === "revision" ? "En Revisión" : "Faltante";
 
 function personRow(loc, p, showLoc) {
   const label = showLoc ? esc(loc.name) : esc(p.name);
@@ -277,7 +277,7 @@ function personRow(loc, p, showLoc) {
     ? `<span class="acts"><button class="bno" data-a="reject">deshacer</button></span>`
     : `<span class="st">${stLabel(p.status)}</span>`;
   const sub = p.google && isAdmin() ? `<small>Google: ${esc(p.google)}</small>`
-    : showLoc && p.status === "pendiente" && loc.maps ? `<small>toca para marcar · <a href="${loc.maps}" target="_blank" rel="noopener">abrir Maps</a></small>` : "";
+    : showLoc && p.status === "pendiente" && loc.maps ? `<small>Toca para marcar · <a href="${loc.maps}" target="_blank" rel="noopener">Abrir Maps</a></small>` : "";
   return `<li class="${p.status}" data-loc="${esc(loc.name)}" data-name="${esc(p.name)}"><div>${label}${sub}</div>${right}</li>`;
 }
 
@@ -290,7 +290,7 @@ function bindRows(root) {
       if (a) return adminAction(a, loc, name);
       const st = statusOf(LOCATIONS.find(l => l.name === loc), name).status;
       if (st === "pendiente") openSubmit(loc, name);
-      else if (!isAdmin()) toast(st === "ok" ? "Ya está lista ✓" : "Ya la mandaste, está en revisión");
+      else if (!isAdmin()) toast(st === "ok" ? "Ya está Lista ✓" : "Ya la enviaste, está en Revisión");
     };
   });
 }
@@ -307,9 +307,9 @@ function renderStores() {
       ${loc.photo ? `<img src="${loc.photo}" alt="">` : ""}
       <button class="head" aria-expanded="${openLocs.has(loc.name)}">
         <div class="row1"><span class="lname">${esc(loc.name)}</span>
-          <span class="count"><b>${c.ok}</b> de ${total} listos${c.revision ? ` · ${c.revision} en revisión` : ""}</span></div>
+          <span class="count"><b>${c.ok}</b> de ${total} listos${c.revision ? ` · ${c.revision} en Revisión` : ""}</span></div>
         <div class="bar"><i class="g" style="width:${c.ok / total * 100}%"></i><i class="y" style="width:${c.revision / total * 100}%"></i></div>
-        <div class="toggle"><span class="lbl">${openLocs.has(loc.name) ? "Ocultar nombres" : `Ver nombres · faltan ${c.pendiente}`}</span><span class="chev">▾</span></div>
+        <div class="toggle"><span class="lbl">${openLocs.has(loc.name) ? "Ocultar nombres" : `Ver nombres · ${c.pendiente} faltantes`}</span><span class="chev">▾</span></div>
       </button>
       ${loc.maps ? `<a class="maps" href="${loc.maps}" target="_blank" rel="noopener">📍 Abrir en Google Maps · dejar review</a>` : ""}
       <ul>${people.map(p => personRow(loc, p, false)).join("")}</ul>`;
@@ -317,7 +317,7 @@ function renderStores() {
       const open = div.classList.toggle("open");
       open ? openLocs.add(loc.name) : openLocs.delete(loc.name);
       div.querySelector(".head").setAttribute("aria-expanded", open);
-      div.querySelector(".lbl").textContent = open ? "Ocultar nombres" : `Ver nombres · faltan ${c.pendiente}`;
+      div.querySelector(".lbl").textContent = open ? "Ocultar nombres" : `Ver nombres · ${c.pendiente} faltantes`;
     };
     div.querySelector(".head").onclick = toggle;
     const img = div.querySelector("img"); if (img) img.onclick = toggle;
@@ -336,7 +336,7 @@ function renderSearch() {
     const order = { pendiente: 0, revision: 1, ok: 2 };
     rows.sort((a, b) => order[a.p.status] - order[b.p.status]);
     return `<div class="person"><h3>${esc(name)}</h3>
-      <div class="sub">${ok} de ${LOCATIONS.length} tiendas listas${ok < LOCATIONS.length ? " · toca una en rojo cuando ya hayas dejado tu review" : " 🎉"}</div>
+      <div class="sub">${ok} de ${LOCATIONS.length} tiendas listas${ok < LOCATIONS.length ? " · toca una tienda en rojo cuando ya hayas dejado tu reseña" : " 🎉"}</div>
       <div class="bar" style="margin:0 0 6px"><i class="g" style="width:${ok / LOCATIONS.length * 100}%"></i></div>
       <ul>${rows.map(r => personRow(r.loc, r.p, true)).join("")}</ul></div>`;
   }).join("") + (matches.length > 8 ? `<p class="hint">Y ${matches.length - 8} más… escribe más letras.</p>` : "");
@@ -363,18 +363,18 @@ function renderDash() {
   const zero = people.filter(p => p.ok === 0).length;
   const all = people.filter(p => p.ok === nloc).length;
   const shown = showAllPeople ? people : people.slice(0, 20);
-  const legend = `<div class="clegend"><span style="--c:var(--ok)">Listo</span><span style="--c:var(--warnbar)">En revisión</span></div>`;
+  const legend = `<div class="clegend"><span style="--c:var(--ok)">Listo</span><span style="--c:var(--warnbar)">En Revisión</span></div>`;
   $("dash").innerHTML = `
     <div class="kpis">
       <div class="kpi"><div class="v">${done}</div><div class="l">reviews listas de ${total * nloc} posibles (${Math.round(done / (total * nloc) * 100)}%)</div></div>
-      <div class="kpi"><div class="v">${pending}</div><div class="l">en revisión</div></div>
+      <div class="kpi"><div class="v">${pending}</div><div class="l">en Revisión</div></div>
       <div class="kpi"><div class="v">${all}</div><div class="l">personas con las ${nloc} tiendas</div></div>
       <div class="kpi"><div class="v" style="color:var(--red)">${zero}</div><div class="l">personas sin ninguna review</div></div>
     </div>
     <div class="chart"><h2>Reviews por tienda</h2><div class="desc">Personas del equipo que ya dejaron review (de ${total})</div>${legend}
-      ${stores.map(s => hbar(s.name, s.ok, s.revision, total, `<b>${s.name}</b><br>${s.ok} listos · ${s.revision} en revisión · ${s.pendiente} faltan`)).join("")}</div>
+      ${stores.map(s => hbar(s.name, s.ok, s.revision, total, `<b>${s.name}</b><br>${s.ok} listos · ${s.revision} en Revisión · ${s.pendiente} faltantes`)).join("")}</div>
     <div class="chart"><h2>Reviews por persona</h2><div class="desc">En cuántas de las ${nloc} tiendas ya dejó review cada quien</div>${legend}
-      ${shown.map(p => hbar(p.name, p.ok, p.rev, nloc, `<b>${p.name}</b><br>${p.ok} de ${nloc} listas${p.rev ? ` · ${p.rev} en revisión` : ""}${p.faltan.length ? `<br>Faltan: ${p.faltan.join(", ")}` : ""}`)).join("")}
+      ${shown.map(p => hbar(p.name, p.ok, p.rev, nloc, `<b>${p.name}</b><br>${p.ok} de ${nloc} listas${p.rev ? ` · ${p.rev} en Revisión` : ""}${p.faltan.length ? `<br>Faltantes: ${p.faltan.join(", ")}` : ""}`)).join("")}
       <button class="more" id="more">${showAllPeople ? "Ver menos" : `Ver las ${total} personas`}</button></div>`;
   $("more").onclick = () => { showAllPeople = !showAllPeople; renderDash(); };
   const tip = $("tip");
@@ -421,7 +421,7 @@ $("dlgSend").onclick = async () => {
     const r = await api({ action: "submit", loc: pending.loc, name: pending.name, google });
     if (!r.ok) throw 0;
     STATUS[KEY(pending.loc, pending.name)] = { status: r.status, google };
-    dlg.close(); render(); toast("¡Gracias! Quedó en revisión 💛");
+    dlg.close(); render(); toast("¡Gracias! Quedó en Revisión 💛");
   } catch (e) { toast("No se pudo enviar, intenta otra vez"); }
   btn.disabled = false;
 };
